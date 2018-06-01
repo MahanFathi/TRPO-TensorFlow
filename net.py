@@ -249,7 +249,7 @@ class ValueNet(object):
                 self.obs_ph: x_train,
                 self.val_ph: y_train
             })
-            return loss, grad
+            return loss.astype(np.float64), grad.astype(np.float64)
 
         phi, vf_loss, opt_info = scipy.optimize.fmin_l_bfgs_b(lossandgrad, prev_phi,
                                                               maxiter=self.max_lbfgs_iter)
