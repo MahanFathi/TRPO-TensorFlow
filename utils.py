@@ -18,7 +18,7 @@ class GracefulKiller:
         self.kill_now = True
 
 
-class scaler(object):
+class scalar(object):
     """ Generate scale and offset based on running mean and stddev along axis=0
 
         offset = running mean

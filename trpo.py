@@ -28,7 +28,7 @@ class TrpoUpdater(object):
     def _compute_hessian_vector_product(self):
         self.shapes = [v.shape.as_list() for v in self.params]
         self.size_theta = np.sum([np.prod(shape) for shape in self.shapes])
-        self.p = tf.placeholder(tf.float32, (self.size_theta,))  # the vector
+        self.p = tf.placeholder(tf.float64, (self.size_theta,))  # the vector
         grads = tf.gradients(self.policy_net.kl_pen, self.params)
         tangents = []
         start = 0
@@ -44,7 +44,7 @@ class TrpoUpdater(object):
         Create the process of assigning updated vars
         """
         self.flat_weights = tf.concat([tf.reshape(param, [-1]) for param in self.params], axis=0)  # flattened
-        self.flat_wieghts_ph = tf.placeholder(tf.float32, (self.size_theta,))
+        self.flat_wieghts_ph = tf.placeholder(tf.float64, (self.size_theta,))
         # self.assign_weights_op = tf.assign(self.flat_weights, self.flat_wieghts_ph)
         self.assign_weights_ops = []
         start = 0
@@ -89,9 +89,6 @@ class TrpoUpdater(object):
             return self.policy_net.sess.run(self.policy_net.surr, feed_dict)
 
         pg = get_pg()
-        if np.allclose(pg, 0):
-            print("Got Zero Gradient. Not Updating.")
-            return 0
         stepdir = cg(get_vp=get_hvp, b=-pg)
         shs = 0.5 * stepdir.dot(get_hvp(stepdir))
         lm = np.sqrt(shs / self.delta)

@@ -35,12 +35,12 @@ class PolicyNet(object):
 
     def _placeholders(self):
         # observations and actions, recorded and taken, with old the policy
-        self.obs_ph = tf.placeholder(tf.float32, shape=(None, self.obs_dim), name='obs_ph')
-        self.act_ph = tf.placeholder(tf.float32, shape=(None, self.act_dim), name='act_ph')
-        self.adv_ph = tf.placeholder(tf.float32, shape=(None,), name='adv_ph')
+        self.obs_ph = tf.placeholder(tf.float64, shape=(None, self.obs_dim), name='obs_ph')
+        self.act_ph = tf.placeholder(tf.float64, shape=(None, self.act_dim), name='act_ph')
+        self.adv_ph = tf.placeholder(tf.float64, shape=(None,), name='adv_ph')
         # log_vars and means with pi_old (previous step's policy parameters):
-        self.old_log_vars_ph = tf.placeholder(tf.float32, (self.act_dim,), 'old_log_vars_ph')
-        self.old_means_ph = tf.placeholder(tf.float32, (None, self.act_dim), 'old_means_ph')
+        self.old_log_vars_ph = tf.placeholder(tf.float64, (self.act_dim,), 'old_log_vars_ph')
+        self.old_means_ph = tf.placeholder(tf.float64, (None, self.act_dim), 'old_means_ph')
 
     def _policy_net(self):
         """
@@ -61,7 +61,7 @@ class PolicyNet(object):
                                      kernel_initializer=
                                      tf.random_normal_initializer(stddev=np.sqrt(1 / init_heu)), name="means")
         # variance
-        self.log_vars = tf.get_variable('logvars', (self.act_dim,), tf.float32,
+        self.log_vars = tf.get_variable('logvars', (self.act_dim,), tf.float64,
                                         tf.constant_initializer(0.0)) + self.init_log_var
 
     def _log_probs(self):
@@ -112,7 +112,7 @@ class PolicyNet(object):
         """
         self.sampled_act = (self.means +
                             tf.exp(self.log_vars / 2.0) *
-                            tf.random_normal(shape=(self.act_dim,), dtype=tf.float32))
+                            tf.random_normal(shape=(self.act_dim,), dtype=tf.float64))
 
     def _losses(self):
         """
@@ -173,8 +173,8 @@ class ValueNet(object):
 
     def _build_net(self):
         with self.Graph.as_default():
-            self.obs_ph = tf.placeholder(tf.float32, (None, self.obs_dim), 'obs_ph')
-            self.val_ph = tf.placeholder(tf.float32, (None,), 'val_ph')
+            self.obs_ph = tf.placeholder(tf.float64, (None, self.obs_dim), 'obs_ph')
+            self.val_ph = tf.placeholder(tf.float64, (None,), 'val_ph')
             out = self.obs_ph
             init_heu = self.obs_dim
             for i, hid_size in enumerate(self.baseline_net_size):
@@ -192,9 +192,9 @@ class ValueNet(object):
                 self.loss += self.reg * tf.nn.l2_loss(v)
             # build gradient descent update procedure
             if self.update_method == 'GD':
-                self.lr = 2e-2  # / np.sqrt(self.baseline_net_size[len(self.baseline_net_size) // 2])
                 optimizer = tf.train.AdadeltaOptimizer(self.lr)
                 self.train_op = optimizer.minimize(self.loss)
+                self.lr = 2e-2  # / np.sqrt(self.baseline_net_size[len(self.baseline_net_size) // 2])
             # uses l_bfgs_b optimization method of scipy
             elif self.update_method == 'LBFGS':
                 self.params = tf.trainable_variables()  # list of all trainable variables
@@ -202,7 +202,7 @@ class ValueNet(object):
                 self.shapes = [v.shape.as_list() for v in self.params]
                 self.size_phi = np.sum([np.prod(shape) for shape in self.shapes])
                 self.flat_weights = tf.concat([tf.reshape(param, [-1]) for param in self.params], axis=0)  # flattened
-                self.flat_wieghts_ph = tf.placeholder(tf.float32, (self.size_phi,))
+                self.flat_wieghts_ph = tf.placeholder(tf.float64, (self.size_phi,))
                 self.assign_weights_ops = []
                 start = 0
                 assert len(self.params) == len(self.shapes), "messed up vf shapes"
