@@ -2,8 +2,9 @@ import numpy as np
 from datetime import datetime
 from net import PolicyNet, ValueNet
 from trpo import TrpoUpdater
+from ppo import PPOUpdater
 from env import Environment
-from utils import scalar, Logger
+from utils import scaler, Logger
 import scipy.signal
 
 
@@ -19,7 +20,7 @@ class Agent(object):
         self.env = env
         self.policy_net = policy_net
         self.baseline_net = ValueNet(config, env, self.logger)
-        self.scalar = scalar(env.ob_dim + 1)
+        self.scaler = scaler(env.ob_dim + 1)
         self.update_baseline = self.baseline_net.fit
         # Settings from config
         self.gamma = config.gamma
@@ -42,16 +43,16 @@ class Agent(object):
         observes, actions, rewards, unscaled_obs = [], [], [], []
         done = False
         step = 0.0
-        scale, offset = self.scalar.get()
+        scale, offset = self.scaler.get()
         scale[-1] = 1.0  # don't scale time step feature
         offset[-1] = 0.0  # don't offset time step feature
         for _ in range(self.timestep_limit):
-            obs = obs.astype(np.float64).reshape((1, -1))
+            obs = obs.astype(np.float32).reshape((1, -1))
             obs = np.append(obs, [[step]], axis=1)  # add time step feature
             unscaled_obs.append(obs)
             obs = (obs - offset) * scale  # center and scale observations
             observes.append(obs)
-            action = self.policy_net.sample(obs).reshape((1, -1)).astype(np.float64)
+            action = self.policy_net.sample(obs).reshape((1, -1)).astype(np.float32)
             actions.append(action)
             obs, reward, done, _ = self.env.step(np.squeeze(action, axis=0), animate)
             if not isinstance(reward, float):
@@ -62,7 +63,7 @@ class Agent(object):
                 break
 
         return (np.concatenate(observes), np.concatenate(actions),
-                np.array(rewards, dtype=np.float64), np.concatenate(unscaled_obs), done)
+                np.array(rewards, dtype=np.float32), np.concatenate(unscaled_obs), done)
 
     def _run_policy(self, batch_size=None, animate=None):
         """ Run policy and collect data for a minimum of min_steps and min_episodes
@@ -87,7 +88,7 @@ class Agent(object):
                           'terminated': done}
             trajectories.append(trajectory)
         unscaled = np.concatenate([t['unscaled_obs'] for t in trajectories])
-        self.scalar.update(unscaled)  # update running statistics for scaling observations
+        self.scaler.update(unscaled)  # update running statistics for scaling observations
         self.logger.log({'_MeanReward': np.mean([t['rewards'].sum() for t in trajectories]),
                     'Steps': total_steps})
 
@@ -186,3 +187,11 @@ class TrpoAgent(Agent):
         policy_net = PolicyNet(config, env)
         super().__init__(config, env, policy_net)
         self.update_policy = TrpoUpdater(policy_net, config, self.logger)
+
+
+class PPOAgent(Agent):
+    def __init__(self, config):
+        env = Environment(config)
+        policy_net = PolicyNet(config, env)
+        super().__init__(config, env, policy_net)
+        self.update_policy = PPOUpdater(policy_net, config, self.logger)

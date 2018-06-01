@@ -1,0 +1,22 @@
+2018-05-18 13:10:55.081110: AutoUpdate called [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/__Tagbar__.1]
+2018-05-18 13:10:55.081500: In Tagbar window, stopping processing
+2018-05-18 13:10:55.871968: AutoUpdate called [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:10:55.872135: Vim filetype: 'python', sanitized filetype: 'python'
+2018-05-18 13:10:55.872202: Checking if file is valid [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:10:55.872428: File data seems up to date [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:10:55.872658: Setting current file [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:10:55.873019: goto_win(): wincmd p, 1
+2018-05-18 13:10:55.873116: goto_win(): 1wincmd w, 1
+2018-05-18 13:10:55.877062: goto_win(): 1wincmd w, 1
+2018-05-18 13:10:55.877146: goto_win(): 2wincmd w, 1
+2018-05-18 13:10:55.877213: AutoUpdate finished successfully
+2018-05-18 13:11:00.626495: AutoUpdate called [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:11:00.626995: Vim filetype: 'python', sanitized filetype: 'python'
+2018-05-18 13:11:00.627178: Checking if file is valid [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:11:00.627770: File data seems up to date [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:11:00.628343: Setting current file [/home/mahan/Mahan/UnderConstruction/TRPO-TensorFlow/log-files/Hopper-v1/Feb-07_07:11:38/trpo.py]
+2018-05-18 13:11:00.629734: goto_win(): wincmd p, 1
+2018-05-18 13:11:00.630127: goto_win(): 1wincmd w, 1
+2018-05-18 13:11:00.640183: goto_win(): 1wincmd w, 1
+2018-05-18 13:11:00.640419: goto_win(): 2wincmd w, 1
+2018-05-18 13:11:00.640605: AutoUpdate finished successfully
