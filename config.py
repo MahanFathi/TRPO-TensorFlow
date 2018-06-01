@@ -1,11 +1,11 @@
-from agent import TrpoAgent
+from agent import TrpoAgent, PPOAgent
 
 
 class config(object):
 
     _vf_update_methods = ['LBFGS', 'GD']
 
-    policy_net_size = [128, 64, 32]
+    policy_net_size = [64, 64]
     baseline_net_size = [128, 64, 32]
     init_log_var = -1   # e^-1
 
@@ -15,7 +15,7 @@ class config(object):
     env_name = 'Hopper-v1'
     animate = False
 
-    timestep_limit = 1000
+    timestep_limit = 10000
     timesteps_per_batch = 10000
     gamma = 0.99
     lam = 0.97
@@ -25,5 +25,13 @@ class config(object):
     reg = 5e-3
     mixfrac = 1.0   # 1.0 corresponds to overfitting
 
-    agent = TrpoAgent
+    # PPO Updater Setup #
+    init_beta = 1.0
+    init_eta = 50
+    lr_multiplier = 1.0
+    kl_targ = 0.003
+    ppo_lr = None
+    update_epochs = 20
+
+    agent = PPOAgent
     iterations = 1000
