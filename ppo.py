@@ -15,9 +15,8 @@ class PPOUpdater(object):
         self._build_updater()
 
     def _build_updater(self):
-        with self.policy_net.Graph.as_default():
-            self._init_placeholders()
-            self._build_loss_and_optimizer()
+        self._init_placeholders()
+        self._build_loss_and_optimizer()
 
     def _init_placeholders(self):
         self.beta_ph = tf.placeholder(tf.float32, (), 'beta')

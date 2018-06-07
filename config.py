@@ -33,5 +33,5 @@ class config(object):
     ppo_lr = None
     update_epochs = 20
 
-    agent = TrpoAgent
+    agent = PPOAgent
     iterations = 1000
