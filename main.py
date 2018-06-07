@@ -23,8 +23,7 @@ def main():
                 print('Animate: OFF')
                 agent.env.env.close()
             killer.kill_now = False
-    agent.policy_net.close_sess()
-    agent.baseline_net.close_sess()
+    agent.sess.close()
     agent.logger.close()
 
 

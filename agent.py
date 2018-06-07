@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from datetime import datetime
 from net import PolicyNet, ValueNet
 from trpo import TrpoUpdater
@@ -28,8 +29,6 @@ class Agent(object):
         self.animate = config.animate
         self.timesteps_per_batch = config.timesteps_per_batch
         self.timestep_limit = config.timestep_limit
-        # warm up agent.scalar
-        self._run_policy(batch_size=1000)
 
     def _run_episode(self, animate=None):
         """ Run single episode with option to animate
@@ -184,14 +183,24 @@ class Agent(object):
 class TrpoAgent(Agent):
     def __init__(self, config):
         env = Environment(config)
+        self.sess = tf.Session()
+        self.sess.__enter__()
         policy_net = PolicyNet(config, env)
         super().__init__(config, env, policy_net)
         self.update_policy = TrpoUpdater(policy_net, config, self.logger)
+        self.sess.run(tf.global_variables_initializer())
+        # warm up agent.scalar
+        self._run_policy(batch_size=1000)
 
 
 class PPOAgent(Agent):
     def __init__(self, config):
+        self.sess = tf.Session()
+        self.sess.__enter__()
         env = Environment(config)
         policy_net = PolicyNet(config, env)
         super().__init__(config, env, policy_net)
         self.update_policy = PPOUpdater(policy_net, config, self.logger)
+        self.sess.run(tf.global_variables_initializer())
+        # warm up agent.scalar
+        self._run_policy(batch_size=1000)

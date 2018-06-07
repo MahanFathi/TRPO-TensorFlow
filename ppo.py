@@ -42,18 +42,18 @@ class PPOUpdater(object):
                      self.beta_ph: self.beta,
                      self.eta_ph: self.eta,
                      self.lr_ph: self.lr * self.lr_multiplier}
-        old_means_np, old_log_vars_np = self.policy_net.sess.run([self.policy_net.means,
-                                                                  self.policy_net.log_vars],
-                                                                 feed_dict)
+        old_means_np, old_log_vars_np = tf.get_default_session().run([self.policy_net.means,
+                                                                      self.policy_net.log_vars],
+                                                                     feed_dict)
         feed_dict[self.policy_net.old_log_vars_ph] = old_log_vars_np
         feed_dict[self.policy_net.old_means_ph] = old_means_np
 
         loss, kl, entropy = 0, 0, 0
         for e in range(self.epochs):
             # TODO: need to improve data pipeline - re-feeding data every epoch
-            self.policy_net.sess.run(self.train_op, feed_dict)
-            loss, kl, entropy = self.policy_net.sess.run([self.loss, self.policy_net.kl, self.policy_net.entropy],
-                                                         feed_dict)
+            tf.get_default_session().run(self.train_op, feed_dict)
+            loss, kl, entropy = tf.get_default_session().run([self.loss, self.policy_net.kl, self.policy_net.entropy],
+                                                             feed_dict)
             if kl > self.kl_targ * 4:  # early stopping if D_KL diverges badly
                 break
         # TODO: too many "magic numbers" in next 8 lines of code, need to clean up

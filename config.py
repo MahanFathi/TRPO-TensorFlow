@@ -20,7 +20,7 @@ class config(object):
     gamma = 0.99
     lam = 0.97
 
-    vf_update_method = _vf_update_methods[0]
+    vf_update_method = _vf_update_methods[1]
     max_lbfgs_iter = 100
     reg = 5e-3
     mixfrac = 1.0   # 1.0 corresponds to overfitting
