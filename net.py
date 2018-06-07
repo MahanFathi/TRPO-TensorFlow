@@ -13,25 +13,23 @@ def flatgrad(loss, var_list):
 #               Policy Network
 # =============================================
 class PolicyNet(object):
-    def __init__(self, config, env):
-        self.Graph = tf.Graph()
+    def __init__(self, config, env, scope='policy'):
+        self.scope = scope
         self.net_size = config.policy_net_size
         self.init_log_var = config.init_log_var
         self.obs_dim = env.ob_dim + 1  # +1 for time dim
         self.act_dim = env.ac_dim
 
         self._build_net()
-        self._init_session()
 
     def _build_net(self):
-        with self.Graph.as_default():
+        with tf.variable_scope(self.scope):
             self._placeholders()
             self._policy_net()
             self._log_probs()
             self._kl_entropy()
             self._sample()
             self._losses()
-            self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
         # observations and actions, recorded and taken, with old the policy
@@ -135,28 +133,24 @@ class PolicyNet(object):
         # optimizer = tf.train.AdamOptimizer(self.lr_ph)
         # self.train_op = optimizer.minimize(self.loss)
 
-    def _init_session(self):
-        """Launch TensorFlow session and initialize variables"""
-        self.sess = tf.Session(graph=self.Graph)
-        self.sess.run(self.init)
-
     def sample(self, obs):
         """Draw sample from policy distribution"""
         feed_dict = {self.obs_ph: obs}
+        return tf.get_default_session().run(self.sampled_act, feed_dict=feed_dict)
 
-        return self.sess.run(self.sampled_act, feed_dict=feed_dict)
+    def get_trainables(self):
+        return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
 
-    def close_sess(self):
-        """ Close TensorFlow session """
-        self.sess.close()
+    def get_variables(self):
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
 
 
 # =============================================
 #               Value Network
 # =============================================
 class ValueNet(object):
-    def __init__(self, config, env, logger):
-        self.Graph = tf.Graph()
+    def __init__(self, config, env, logger, scope='valuefunction'):
+        self.scope = scope
         self.baseline_net_size = config.baseline_net_size
         self.replay_buffer_x = None
         self.replay_buffer_y = None
@@ -169,10 +163,9 @@ class ValueNet(object):
         self.max_lbfgs_iter = config.max_lbfgs_iter
 
         self._build_net()
-        self._init_session()
 
     def _build_net(self):
-        with self.Graph.as_default():
+        with tf.variable_scope(self.scope):
             self.obs_ph = tf.placeholder(tf.float32, (None, self.obs_dim), 'obs_ph')
             self.val_ph = tf.placeholder(tf.float32, (None,), 'val_ph')
             out = self.obs_ph
@@ -193,11 +186,11 @@ class ValueNet(object):
             # build gradient descent update procedure
             if self.update_method == 'GD':
                 self.lr = 2e-2  # / np.sqrt(self.baseline_net_size[len(self.baseline_net_size) // 2])
-                optimizer = tf.train.AdadeltaOptimizer(self.lr)
-                self.train_op = optimizer.minimize(self.loss)
+                optimizer = tf.train.AdamOptimizer(self.lr)
+                self.train_op = optimizer.minimize(self.loss, var_list=self.get_trainables())
             # uses l_bfgs_b optimization method of scipy
             elif self.update_method == 'LBFGS':
-                self.params = tf.trainable_variables()  # list of all trainable variables
+                self.params = self.get_trainables()  # list of all trainable variables
                 self.vg = flatgrad(self.loss, self.params)  # value gradient
                 self.shapes = [v.shape.as_list() for v in self.params]
                 self.size_phi = np.sum([np.prod(shape) for shape in self.shapes])
@@ -212,15 +205,9 @@ class ValueNet(object):
                     self.assign_weights_ops.append(self.params[i].assign(param))
                     start += size
                 assert start == self.size_phi, "messy vf shapes"
-            self.init = tf.global_variables_initializer()
-
-    def _init_session(self):
-        """Launch TensorFlow session and initialize variables"""
-        self.sess = tf.Session(graph=self.Graph)
-        self.sess.run(self.init)
 
     def get_loss(self, x, y):
-        return self.sess.run(self.loss, feed_dict={
+        return tf.get_default_session().run(self.loss, feed_dict={
             self.obs_ph: x,
             self.val_ph: y
         })
@@ -232,7 +219,7 @@ class ValueNet(object):
             self.fit_gd(x, y)
 
     def fit_lbfgs(self, x, y):
-        prev_phi = self.sess.run(self.flat_weights)
+        prev_phi = tf.get_default_session().run(self.flat_weights)
         y_hat = self.predict(x)
         x_train = x
         y_train = y * self.mixfrac + y_hat * (1 - self.mixfrac)
@@ -244,8 +231,8 @@ class ValueNet(object):
         self.logger.log({'Value Error Old': vf_error, 'Value Loss Old': vf_loss})
 
         def lossandgrad(phi):
-            self.sess.run(self.assign_weights_ops, feed_dict={self.flat_wieghts_ph: phi})
-            loss, grad = self.sess.run([self.loss, self.vg], feed_dict={
+            tf.get_default_session().run(self.assign_weights_ops, feed_dict={self.flat_wieghts_ph: phi})
+            loss, grad = tf.get_default_session().run([self.loss, self.vg], feed_dict={
                 self.obs_ph: x_train,
                 self.val_ph: y_train
             })
@@ -255,7 +242,7 @@ class ValueNet(object):
                                                               maxiter=self.max_lbfgs_iter)
         del opt_info['grad']
         print(opt_info)
-        self.sess.run(self.assign_weights_ops, feed_dict={self.flat_wieghts_ph: phi})
+        tf.get_default_session().run(self.assign_weights_ops, feed_dict={self.flat_wieghts_ph: phi})
         y_hat = self.predict(x)
         vf_error = np.mean(np.square(y_hat - y))
         self.logger.log({'Value Error Now': vf_error, 'Value Loss Now': vf_loss})
@@ -282,7 +269,7 @@ class ValueNet(object):
                 end = (j + 1) * batch_size
                 feed_dict = {self.obs_ph: x_train[start:end, :],
                              self.val_ph: y_train[start:end]}
-                _, l = self.sess.run([self.train_op, self.loss], feed_dict=feed_dict)
+                _, l = tf.get_default_session().run([self.train_op, self.loss], feed_dict=feed_dict)
         y_hat = self.predict(x)
         vf_loss = self.get_loss(x_train, y_train)
         vf_error = np.mean(np.square(y_hat - y))
@@ -290,9 +277,11 @@ class ValueNet(object):
 
     def predict(self, x):
         feed_dict = {self.obs_ph: x}
-        y_hat = self.sess.run(self.preds, feed_dict=feed_dict)
+        y_hat = tf.get_default_session().run(self.preds, feed_dict=feed_dict)
         return np.squeeze(y_hat)
 
-    def close_sess(self):
-        """ Close TensorFlow session """
-        self.sess.close()
+    def get_trainables(self):
+        return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
+
+    def get_variables(self):
+        return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
